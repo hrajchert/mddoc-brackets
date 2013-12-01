@@ -1,8 +1,10 @@
 This file is in charge of bind stuff together.
 TODO: Write this better and in the code as jsdoc, later on, import it here.
 
-The function `loadReferences` receives an editor and loads the **code references** inside the various markdowns. Then it inserts gutters markers
-next to the referenced code and stores the references in an object to allow the `cmd + K ` document search
+The method `loadReferences` is called when the editor is changed, then it loads the references and insert gutters markers
+next to the referenced code.
+
+It also stores the references in the `references object` to allow the `cmd + K ` command that provides document search
 
 {%code_inc
     "src" : "main.js",
@@ -10,3 +12,6 @@ next to the referenced code and stores the references in an object to allow the 
         "text" : "function loadReferences(editor) {"
     }
 %}
+
+
+

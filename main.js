@@ -10,16 +10,12 @@ define(function (require, exports, module) {
         MultiRangeInlineEditor  = brackets.getModule("editor/MultiRangeInlineEditor").MultiRangeInlineEditor,
         ExtensionUtils          = brackets.getModule("utils/ExtensionUtils"),
         ProjectManager          = brackets.getModule("project/ProjectManager"),
-        DocumentManager         = brackets.getModule("document/DocumentManager"),
-        AppInit                 = brackets.getModule("utils/AppInit"),
-        NodeConnection          = brackets.getModule("utils/NodeConnection");
+        DocumentManager         = brackets.getModule("document/DocumentManager");
 
     var GutterHelper = require("./GutterHelper");
+    var nodeDomainPromise = require("./DomainHelper").mdDocDomain;
 
-    var nodeDomainPromise = null;
     ExtensionUtils.loadStyleSheet(module, "main.less");
-
-
 
 
     function _getEditorRelativePath (editor) {
@@ -44,19 +40,14 @@ define(function (require, exports, module) {
         // Get the relative path to the project of the file we want to get the references
         var openFile = _getEditorRelativePath(editor);
 
-        // TODO: fix this
-        if (nodeDomainPromise === null) {
-            return;
-        }
-
-        console.log("Loading references for: " + openFile);
-
-        // Clear the previous references
-        references[openFile] = {};
-        GutterHelper.clearGutter(editor);
-
         // Ask for the node domain
         nodeDomainPromise.then(function(domain) {
+            console.log("Loading references for: " + openFile);
+
+            // Clear the previous references
+            references[openFile] = {};
+            GutterHelper.clearGutter(editor);
+
             domain.getRefFromCode(openFile).then(function(ref){
                 for (var refhash in ref) {
                     if (!ref[refhash].found) {
@@ -175,45 +166,6 @@ define(function (require, exports, module) {
     EditorManager.registerInlineDocsProvider(docsQuickEditHandler, 1);
 
 
-    AppInit.appReady(function () {
-        // Create a new node connection. Requires the following extension:
-        // https://github.com/joelrbrandt/brackets-node-client
-        var nodeConnection = new NodeConnection();
-
-        // Every step of communicating with node is asynchronous, and is
-        // handled through jQuery promises. To make things simple, we
-        // construct a series of helper functions and then chain their
-        // done handlers together. Each helper function registers a fail
-        // handler with its promise to report any errors along the way.
-
-
-        // Helper function to connect to node
-        function connect() {
-            var connectionPromise = nodeConnection.connect(true);
-            connectionPromise.fail(function () {
-                console.error("[brackets-mdDoc] failed to connect to node");
-            });
-            return connectionPromise;
-        }
-
-        // Helper function that loads our domain into the node server
-        function loadDomain() {
-            var p = $.Deferred();
-            var path = ExtensionUtils.getModulePath(module, "node/MdDocDomain");
-            var loadPromise = nodeConnection.loadDomains([path], true);
-            loadPromise.then(function(){
-                p.resolve(nodeConnection.domains.mdDoc);
-            });
-            loadPromise.fail(function (err) {
-                console.log("[brackets-mdDoc] failed to load domain: " + err);
-                p.reject(err);
-            });
-            return p.promise();
-        }
-
-        nodeDomainPromise = connect().then(loadDomain);
-        loadReferences();
-    });
 
 // Function that shows me how to add a marker in brackets
 //    function playWithMarker() {

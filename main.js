@@ -19,7 +19,7 @@ define(function (require, exports, module) {
     var nodeDomainPromise = null;
     ExtensionUtils.loadStyleSheet(module, "main.less");
 
-    var references = {};
+
 
 
     function _getEditorRelativePath (editor) {
@@ -27,8 +27,9 @@ define(function (require, exports, module) {
         var l = project.fullPath.length;
         return editor.document.file.fullPath.substr(l);
     }
-
-    var loadedReferences = {};
+    // This are the references cached.
+    // The keys correspond to the files that where cached, the values will be other object with the references.
+    var references = {};
 
     /**
      * Get the code references for `editor` and insert gutter markers next to the referenced code
@@ -43,16 +44,15 @@ define(function (require, exports, module) {
         // Get the relative path to the project of the file we want to get the references
         var openFile = _getEditorRelativePath(editor);
 
-        console.log("Loading references for: " + openFile);
-
         // TODO: fix this
         if (nodeDomainPromise === null) {
             return;
         }
 
+        console.log("Loading references for: " + openFile);
+
         // Clear the previous references
-        // TODO: Do I want to do this?
-        references = {};
+        references[openFile] = {};
         GutterHelper.clearGutter(editor);
 
         // Ask for the node domain
@@ -62,15 +62,14 @@ define(function (require, exports, module) {
                     if (!ref[refhash].found) {
                         continue;
                     }
-                    references[refhash] = {
+                    references[openFile][refhash] = {
                         ref: ref[refhash],
                         startPos: editor._codeMirror.posFromIndex(ref[refhash].char.from),
                         endPos: editor._codeMirror.posFromIndex(ref[refhash].char.to)
                     };
-                    var line = references[refhash].startPos.line;
+                    var line = references[openFile][refhash].startPos.line;
                     GutterHelper.createGutter({"line": line + 1});
                 }
-                loadedReferences[openFile] = true;
 
             });
         });
@@ -84,7 +83,7 @@ define(function (require, exports, module) {
             var editorFileName = _getEditorRelativePath(newEditor);
 
             // Only load once the references for each file
-            if (!loadedReferences.hasOwnProperty(editorFileName)) {
+            if (!references.hasOwnProperty(editorFileName)) {
                 loadReferences(newEditor);
             }
 
@@ -97,12 +96,32 @@ define(function (require, exports, module) {
         nodeDomainPromise.then(function(domain) {
             domain.refreshReferences(ProjectManager.getProjectRoot().fullPath).then(function () {
                 // Reset the loaded references
-                loadedReferences = {};
+                references = {};
                 // Load reference for the current open file
                 loadReferences();
             });
         });
     });
+
+
+    /**
+     * Function that compares to references and helps sorts by the most specific.
+     * The most specific reference is the one with lower line span
+     * @param {type} ref1 The first reference to compare
+     * @param {type} ref2 The second reference to compare
+     */
+    function sortMoreSpecific(ref1, ref2) {
+        var size1 = ref1.char.to - ref1.char.from;
+        var size2 = ref2.char.to - ref2.char.from;
+
+        if (size1 === size2) {
+            return 0;
+        }
+        if (size1 < size2 ) {
+            return -1;
+        }
+        return 1;
+    }
 
     function openQuickEditReference(editor, refs) {
         var p = $.Deferred();
@@ -132,28 +151,28 @@ define(function (require, exports, module) {
         return p.promise();
     }
 
-    function playWithQuickEdit(editor, location) {
+    function docsQuickEditHandler(editor, location) {
         var refs = [];
-        for (var refhash in references) {
-            if (location.line < references[refhash].startPos.line ) {
+        var openFile = _getEditorRelativePath(editor);
+        for (var refhash in references[openFile]) {
+            if (location.line < references[openFile][refhash].startPos.line ) {
                 continue;
             }
 
-            if (location.line > references[refhash].endPos.line ) {
+            if (location.line > references[openFile][refhash].endPos.line ) {
                 continue;
             }
-            refs.push(references[refhash].ref);
-            // TODO: Change this so that we return all posible matches
-
+            refs.push(references[openFile][refhash].ref);
         }
         if (refs.length === 0) {
             return null;
         } else {
+            refs.sort(sortMoreSpecific);
             return openQuickEditReference(editor, refs);
         }
     }
 
-    EditorManager.registerInlineDocsProvider(playWithQuickEdit, 1);
+    EditorManager.registerInlineDocsProvider(docsQuickEditHandler, 1);
 
 
     AppInit.appReady(function () {

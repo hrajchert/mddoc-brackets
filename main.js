@@ -23,9 +23,11 @@ define(function (require, exports, module) {
         var l = project.fullPath.length;
         return editor.document.file.fullPath.substr(l);
     }
+
     // This are the references cached.
     // The keys correspond to the files that where cached, the values will be other object with the references.
     var references = {};
+
 
     /**
      * Get the code references for `editor` and insert gutter markers next to the referenced code
@@ -79,6 +81,11 @@ define(function (require, exports, module) {
             }
 
         }
+    });
+
+    // As soon as we have node, load for the first time the references
+    nodeDomainPromise.then(function(domain){
+        domain.refreshReferences(ProjectManager.getProjectRoot().fullPath);
     });
 
     // Whenever a document is saved we refresh the references of the whole project (IU PERFORMANCE!)

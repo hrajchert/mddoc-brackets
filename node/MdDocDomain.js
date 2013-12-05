@@ -9,46 +9,55 @@ maxerr: 50, node: true */
         mdDoc = require("mdDoc"),
         fs    = require("fs");
 
-    var metadata = null;
+    // This is a promise to get the metadata
+    var metadataPromise = when.defer();
 
 
     /**
      * Gets the reference from a source file
-     * @param string src The source file to get the reference from
+     * @param string src       The source file to get the reference from
+     * @param cb     function  The errback to call once
      */
-    function getRefFromCode(src) {
-        // We need to have the metadata loaded before calling this.
-        if (metadata === null) {
-            return {};
-        }
+    function getRefFromCode(src, cb) {
+        // Wait for the metadata to be loaded
+        metadataPromise.promise.then(function(metadata) {
+            // If we dont have metadata for this src file, nothing to see here, move along.
+            if (!metadata.hrCode.hasOwnProperty(src)) {
+                return cb(null, {});
+            }
 
-        // If we dont have metadata for this src file, nothing to see here, move along.
-        if (!metadata.hrCode.hasOwnProperty(src)) {
-            return {};
-        }
+            // If there is, show it!
+            return cb(null, metadata.hrCode[src].refs);
+        });
 
-        // If there is, show it!
-        return metadata.hrCode[src].refs;
+        // Catch errors
+        metadataPromise.promise.otherwise(function(err) {
+            cb(err);
+        });
     }
 
 
     /**
      * @private
-     * Loads a json file in form of a promise
+     * Helper method that loads a json file in form of a promise
      * @param   string  jsonFile The path of the json file to load
      * @returns Promise          A promise of the json object
      */
     function _loadJson(jsonFile) {
         var p = when.defer();
+        // Try to read the file
         fs.readFile(jsonFile, function(err, str) {
+            // Inform if it was any errors
             if (err) {
-                return p.reject(err);
+                return p.reject({msg: "Reading error", file: jsonFile, err: err});
             }
 
+            // Try to parse the file as a json or fail otherwise
             try {
                 var jsonParse = JSON.parse(str);
                 p.resolve(jsonParse);
             } catch (e) {
+                console.error("json failed " + jsonFile);
                 p.reject({msg: "Parsing error", file: jsonFile, err: e});
             }
         });
@@ -57,16 +66,25 @@ maxerr: 50, node: true */
 
     /**
      * Refreshes the metadata for the project
-     * @param {type} projectDir Description
+     * @param string projectDir The path of the project to analyze
      */
     function refreshReferences(projectDir) {
+        // If the metadata is already resolved, then create a new one
+        if (metadataPromise.promise.inspect().state !== "pending") {
+            metadataPromise = when.defer();
+        }
+
+        // Change to the project dir to simulate the tool being run there
         process.chdir(projectDir);
+
+        // Load the project settings
         var mddocSettings = _loadJson(projectDir + "/.mddoc.json");
-        console.log(mddocSettings);
+
+        // Run the tool
         mddocSettings.then(function(settings) {
             mdDoc.tool.verbose(false);
-            mdDoc.tool.run(settings).then(function (promisedMetadata) {
-                metadata = promisedMetadata;
+            mdDoc.tool.run(settings).then(function (metadata) {
+                metadataPromise.resolve(metadata);
             });
         });
     }
@@ -98,7 +116,7 @@ maxerr: 50, node: true */
             "mdDoc",            // domain name
             "getRefFromCode",   // command name
             getRefFromCode,     // command handler function
-            false,              // this command is synchronous
+            true,              // this command is synchronous
             "To complete",
             [{name: "src",
               type: "src:string",

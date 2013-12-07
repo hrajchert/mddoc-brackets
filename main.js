@@ -12,8 +12,10 @@ define(function (require, exports, module) {
         ProjectManager          = brackets.getModule("project/ProjectManager"),
         DocumentManager         = brackets.getModule("document/DocumentManager");
 
-    var GutterHelper = require("./GutterHelper");
+    var GutterHelper      = require("./GutterHelper");
     var nodeDomainPromise = require("./DomainHelper").mdDocDomain;
+    var PanelHelper       = require("./PanelHelper");
+
 
     ExtensionUtils.loadStyleSheet(module, "main.less");
 
@@ -68,6 +70,7 @@ define(function (require, exports, module) {
         });
     }
 
+
     // Load the file references (if any) when a new editor comes into play
     $(EditorManager).on("activeEditorChange", function(event, newEditor){
         // This event is called both for full and inline editors, so
@@ -83,22 +86,37 @@ define(function (require, exports, module) {
         }
     });
 
-    // As soon as we have node, load for the first time the references
-    nodeDomainPromise.then(function(domain){
-        domain.refreshReferences(ProjectManager.getProjectRoot().fullPath);
+    // When the project changes, refresh the metadata
+    $(ProjectManager).on("projectOpen", function(){
+        refreshReferences();
     });
+
+    function refreshReferences () {
+        nodeDomainPromise.then(function(domain) {
+            domain.refreshReferences(ProjectManager.getProjectRoot().fullPath).then(
+                function () {
+                    // Reset the loaded references
+                    references = {};
+                    // Load reference for the current open file
+                    loadReferences();
+                    // Indicate there where no errors
+                    PanelHelper.clearErrors();
+                },
+                function (err) {
+                    console.log("there was an error");
+                    console.log(err);
+                    PanelHelper.showErrors(err);
+                }
+            );
+        });
+    }
+    // As soon as we have node, load for the first time the references
+    refreshReferences();
 
     // Whenever a document is saved we refresh the references of the whole project (IU PERFORMANCE!)
     $(DocumentManager).on("documentSaved", function(){
         console.log("Document saved!");
-        nodeDomainPromise.then(function(domain) {
-            domain.refreshReferences(ProjectManager.getProjectRoot().fullPath).then(function () {
-                // Reset the loaded references
-                references = {};
-                // Load reference for the current open file
-                loadReferences();
-            });
-        });
+        refreshReferences();
     });
 
 
@@ -171,7 +189,6 @@ define(function (require, exports, module) {
     }
 
     EditorManager.registerInlineDocsProvider(docsQuickEditHandler, 1);
-
 
 
 // Function that shows me how to add a marker in brackets

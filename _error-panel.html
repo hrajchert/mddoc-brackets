@@ -1,0 +1,15 @@
+{{#errors}}
+<div class="step">
+    {{step}}
+</div>
+<div class="msg">
+    {{msg}}
+</div>
+<div class="locations">
+    {{#location}}
+    <div class="loc">
+        <span class="filename">{{file}}</span>:<span class="linenumber">{{line}}</span>
+    </div>
+    {{/location}}
+</div>
+{{/errors}}

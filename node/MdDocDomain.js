@@ -12,11 +12,10 @@ maxerr: 50, node: true */
     // This is a promise to get the metadata
     var metadataPromise = when.defer();
 
-
     /**
      * Gets the reference from a source file
      * @param string src       The source file to get the reference from
-     * @param cb     function  The errback to call once
+     * @param cb     function  The errback to call once we get the references
      */
     function getRefFromCode(src, cb) {
         // Wait for the metadata to be loaded
@@ -67,8 +66,9 @@ maxerr: 50, node: true */
     /**
      * Refreshes the metadata for the project
      * @param string projectDir The path of the project to analyze
+     * @param cb     function  The errback to call once we get the references
      */
-    function refreshReferences(projectDir) {
+    function refreshReferences(projectDir, cb) {
         // If the metadata is already resolved, then create a new one
         if (metadataPromise.promise.inspect().state !== "pending") {
             metadataPromise = when.defer();
@@ -85,6 +85,9 @@ maxerr: 50, node: true */
             mdDoc.tool.verbose(false);
             mdDoc.tool.run(settings).then(function (metadata) {
                 metadataPromise.resolve(metadata);
+                cb(null, metadata);
+            }, function(err) {
+                cb(err);
             });
         });
     }
@@ -102,7 +105,7 @@ maxerr: 50, node: true */
             "mdDoc",            // domain name
             "refreshReferences",   // command name
             refreshReferences,     // command handler function
-            false,              // this command is synchronous
+            true,              // this command is asynchronous
             "To complete",
             [{name: "dir",
               type: "dir:string",
@@ -116,7 +119,7 @@ maxerr: 50, node: true */
             "mdDoc",            // domain name
             "getRefFromCode",   // command name
             getRefFromCode,     // command handler function
-            true,              // this command is synchronous
+            true,              // this command is asynchronous
             "To complete",
             [{name: "src",
               type: "src:string",

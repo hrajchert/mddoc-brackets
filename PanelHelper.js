@@ -60,11 +60,35 @@ define(function (require, exports) {
         return locations;
     }
 
+    function _getErrorMessageFromSubErr(errObj, newError) {
+        if (typeof errObj === "object") {
+            if ("err" in errObj) {
+                return _getErrorMessageFromSubErr(errObj.err, newError);
+            }
+            if ("stack" in errObj) {
+                newError.stack = errObj.stack;
+            }
+            if ("msg" in errObj) {
+                newError.msg = errObj.msg;
+            } else {
+                newError.msg = JSON.stringify(errObj, null, "    ");
+            }
+
+        } else {
+            newError.msg = errObj.toString();
+        }
+    }
+
     function _preprocessErrors (errors) {
         var processedErrors = [];
         for (var i=0; i< errors.length ; i++) {
             var newError = {};
             var oldError = errors[i];
+
+            if (typeof oldError === "string") {
+                oldError = {msg: oldError};
+            }
+
             if ("step" in oldError) {
                 newError.step = oldError.step;
             } else {
@@ -74,11 +98,7 @@ define(function (require, exports) {
             if ("msg" in oldError) {
                 newError.msg = oldError.msg;
             } else if ("err" in oldError) {
-                if ("err" in oldError.err) {
-                    newError.msg = JSON.stringify(oldError.err.err, null, "    ");
-                } else {
-                    newError.msg = JSON.stringify(oldError.err, null, "    ");
-                }
+                _getErrorMessageFromSubErr(oldError.err, newError);
             } else {
                 newError.msg = "undefined error message";
             }

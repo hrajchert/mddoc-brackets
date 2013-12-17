@@ -15,7 +15,7 @@ Basically say, you know the metadata you had, If you already used it, fine, but 
 I think that by switching the promise, we could be loosing the pending promises if the javascript turn hasnt finished
 or some bug of some sort... Will have to check
 
-{%code_ref
+{%code_warning
     "src" : "node/MdDocDomain.js",
     "ref" : {
         "text" : "metadataPromise.promise.inspect().state !== "

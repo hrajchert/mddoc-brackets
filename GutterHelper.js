@@ -6,10 +6,12 @@ define(function (require, exports) {
 
     var EditorManager = brackets.getModule("editor/EditorManager");
 
-    function makeMarker() {
+    function makeMarker(options) {
+        var className = options.className || "mdDoc-ref";
+        var letter = options.letter || "D";
         var marker = document.createElement("div");
-        marker.className = "mdDoc-ref";
-        marker.innerHTML = "D";
+        marker.className = "mdDoc-gutter " + className;
+        marker.innerHTML = letter;
         return marker;
     }
 
@@ -37,7 +39,7 @@ define(function (require, exports) {
         validateCodeMirrorGutter(cm);
 
         // Add the gutter for the selected line
-        cm.setGutterMarker(options.line - 1, "mdDocGutter", makeMarker());
+        cm.setGutterMarker(options.line - 1, "mdDocGutter", makeMarker(options));
     }
 
     function clearGutter (editor) {

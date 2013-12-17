@@ -15,13 +15,25 @@ define(function (require, exports) {
     var $panel;
     var $statusBar;
 
+    // Keeps track if the panel is open or not
     var _open = false;
 
+    // If not told otherwise, the panel should open when there is something new to show
+    var _openOnUpdate = true;
+
+
+    /**
+     * Shows the bottom panel
+     */
     function showPanel() {
         _open = true;
         Resizer.show($panel);
     }
 
+
+    /**
+     * Hides the bottom panel
+     */
     function hidePanel() {
         _open = false;
         Resizer.hide($panel);
@@ -113,34 +125,55 @@ define(function (require, exports) {
     }
 
     function clearErrors() {
+        // Clear previous errors from the tab
         $("#mddoc-error").html("");
+
+        // Hide the bottom panel
         hidePanel();
+
+        // Inform there is no errors in the status bar
+        StatusBar.updateIndicator("status-mddoc", true, "mddoc-success", "Systems are operational.");
     }
 
+    /**
+     * Parse and render the errors in the error tab of the bottom panel.
+     * @param [Object] errors An array of error objects
+     */
     function showErrors (errors) {
+        // Make sure its an array
         if (!Array.isArray(errors)) {
             errors = [errors];
         }
 
+        // Make the errors uniform, so we can pass it to the template system
         errors = _preprocessErrors(errors);
+
+        // Render the errors using Mustache template system
         var errorPanel = Mustache.render(errorPanelTemplate, {errors:errors});
+
+        // Insert the generated html in the error tab
         $("#mddoc-error").html(errorPanel);
-        showPanel();
+
+        // Mark there is an error in the status bar
+        StatusBar.updateIndicator("status-mddoc", true, "mddoc-error", "There is an error with the docs.");
+
+        // Show the panel (only if we are not told otherwise)
+        if (_openOnUpdate) {
+            showPanel();
+        }
+
     }
 
-    function _configureShowErrorHandlers() {
-        // Whenever an error location is clicked, open the file that generates the error.
-        $panel.on("click", "#mddoc-error .locations .loc", function(e) {
-            // Get the filename and number
-            var filename = $(e.currentTarget).find(".filename").text();
-            var linenumber = $(e.currentTarget).find(".linenumber").text();
+    function _openErrorFile(e) {
+        // Get the filename and number
+        var filename = $(e.currentTarget).find(".filename").text();
+        var linenumber = $(e.currentTarget).find(".linenumber").text();
 
-            // Construct the full path, including the linenumber
-            var fullPath = ProjectManager.getProjectRoot().fullPath + filename + ":"+linenumber;
+        // Construct the full path, including the linenumber
+        var fullPath = ProjectManager.getProjectRoot().fullPath + filename + ":"+linenumber;
 
-            // Open the file
-            CommandManager.execute(Commands.FILE_ADD_TO_WORKING_SET, { fullPath: fullPath });
-        });
+        // Open the file
+        CommandManager.execute(Commands.FILE_ADD_TO_WORKING_SET, { fullPath: fullPath });
     }
 
     AppInit.htmlReady(function () {
@@ -150,7 +183,10 @@ define(function (require, exports) {
         $panel = $("#mddoc-panel");
 
         $panel.on("click", ".close", function () {
-            Resizer.hide($panel);
+            hidePanel();
+            // If we manually close the panel, we shouldnt open it
+            // automatically when there is a new event (like a new error)
+            _openOnUpdate = false;
         });
 
 
@@ -161,14 +197,24 @@ define(function (require, exports) {
         $statusBar = $("#status-mddoc");
 
         StatusBar.addIndicator("status-mddoc", StatusBar);
-        StatusBar.updateIndicator("status-mddoc", true, "myclass", "EA ea");
 
-        $statusBar.on("click", togglePanel);
 
-        _configureShowErrorHandlers();
+        // If we click on the status bar, then we should toggle the bottom panel
+        $statusBar.on("click", function(){
+            // Reset the open on events.
+            _openOnUpdate = true;
+            togglePanel();
+        });
+
+        // Whenever an error location is clicked, open the file that generates the error.
+        $panel.on("click", "#mddoc-error .locations .loc",  _openErrorFile);
+
     });
 
     exports.showErrors = showErrors;
     exports.clearErrors = clearErrors;
+    exports.showPanel = showPanel;
+    exports.hidePanel = hidePanel;
+    exports.togglePanel = togglePanel;
 
 });

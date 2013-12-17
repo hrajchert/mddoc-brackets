@@ -1,14 +1,14 @@
 /*jslint vars: true, plusplus: true, devel: true, nomen: true, indent: 4,
 maxerr: 50, node: true */
-/*global console */
 
 (function () {
     "use strict";
 
     var when  = require("when"),
-        mdDoc = require("mdDoc"),
-        fs    = require("fs");
+        mdDoc = require("mdDoc");
 
+
+    var utils = mdDoc.utils;
     // This is a promise to get the metadata
     var metadataPromise = when.defer();
 
@@ -37,33 +37,6 @@ maxerr: 50, node: true */
 
 
     /**
-     * @private
-     * Helper method that loads a json file in form of a promise
-     * @param   string  jsonFile The path of the json file to load
-     * @returns Promise          A promise of the json object
-     */
-    function _loadJson(jsonFile) {
-        var p = when.defer();
-        // Try to read the file
-        fs.readFile(jsonFile, function(err, str) {
-            // Inform if it was any errors
-            if (err) {
-                return p.reject({msg: "Reading error", file: jsonFile, err: err});
-            }
-
-            // Try to parse the file as a json or fail otherwise
-            try {
-                var jsonParse = JSON.parse(str);
-                p.resolve(jsonParse);
-            } catch (e) {
-                console.error("json failed " + jsonFile);
-                p.reject({msg: "Parsing error", file: jsonFile, err: e});
-            }
-        });
-        return p.promise;
-    }
-
-    /**
      * Refreshes the metadata for the project
      * @param string projectDir The path of the project to analyze
      * @param cb     function  The errback to call once we get the references
@@ -78,7 +51,7 @@ maxerr: 50, node: true */
         process.chdir(projectDir);
 
         // Load the project settings
-        var mddocSettings = _loadJson(projectDir + "/.mddoc.json");
+        var mddocSettings = utils.loadJson(projectDir + "/.mddoc.json");
 
         // Run the tool
         mddocSettings.then(function(settings) {

@@ -63,7 +63,17 @@ define(function (require, exports, module) {
                         endPos: editor._codeMirror.posFromIndex(ref[refhash].char.to)
                     };
                     var line = references[openFile][refhash].startPos.line;
-                    GutterHelper.createGutter({"line": line + 1});
+
+                    // TODO: refactor
+                    var opts = {"line": line + 1};
+                    if (ref[refhash].directive === "code_warning") {
+                        opts.className = "mdDoc-warning";
+                        opts.letter = "W";
+                    } else if (ref[refhash].directive === "code_todo") {
+                        opts.className = "mdDoc-todo";
+                        opts.letter = "T";
+                    }
+                    GutterHelper.createGutter(opts);
                 }
 
             });
@@ -88,6 +98,7 @@ define(function (require, exports, module) {
 
     // When the project changes, refresh the metadata
     $(ProjectManager).on("projectOpen", function(){
+        console.log("Project opened!");
         refreshReferences();
     });
 
@@ -110,8 +121,6 @@ define(function (require, exports, module) {
             );
         });
     }
-    // As soon as we have node, load for the first time the references
-    refreshReferences();
 
     // Whenever a document is saved we refresh the references of the whole project (IU PERFORMANCE!)
     $(DocumentManager).on("documentSaved", function(){

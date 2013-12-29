@@ -112,6 +112,9 @@ define(function (require, exports, module) {
                     loadReferences();
                     // Indicate there where no errors
                     PanelHelper.clearErrors();
+
+                    // Refresh not found references
+                    domain.getNotFoundRefs().then(PanelHelper.setNotFound);
                 },
                 function (err) {
                     console.log("there was an error");

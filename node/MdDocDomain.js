@@ -35,6 +35,21 @@ maxerr: 50, node: true */
         });
     }
 
+    function getNotFoundRefs(cb) {
+        // Wait for the metadata to be loaded
+        metadataPromise.promise.then(function(metadata) {
+            console.log("getNotFoundRefs called");
+            // Return the not found references
+            return cb(null, metadata.notFound);
+        });
+
+        // Catch errors
+        metadataPromise.promise.otherwise(function(err) {
+            cb(err);
+        });
+
+    }
+
 
     /**
      * Refreshes the metadata for the project
@@ -100,6 +115,18 @@ maxerr: 50, node: true */
              }],                 // no parameters
             []
         );
+
+        DomainManager.registerCommand(
+            "mdDoc",            // domain name
+            "getNotFoundRefs",   // command name
+            getNotFoundRefs,     // command handler function
+            true,              // this command is asynchronous
+            "To complete",
+            [],                 // no parameters
+            []
+        );
+
+
     }
 
     exports.init = init;

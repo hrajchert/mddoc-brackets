@@ -14,13 +14,4 @@ It also stores the references in the `references object` to allow the `cmd + K `
 %}
 
 
-This code is wrong because the promise should be loaded anyway. This will be fixed once I move the domain into its own helper file
-
-{%code_ref
-    "src" : "main.js",
-    "ref" : {
-        "text" : "if (nodeDomainPromise === null) {"
-    }
-%}
-
 

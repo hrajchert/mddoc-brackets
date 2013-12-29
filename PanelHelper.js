@@ -10,8 +10,9 @@ define(function (require, exports) {
         ProjectManager          = brackets.getModule("project/ProjectManager"),
         Resizer                 = brackets.getModule("utils/Resizer");
 
-    var panelTemplate      = require("text!bottom-panel.html");
-    var errorPanelTemplate = require("text!_error-panel.html");
+    var panelTemplate         = require("text!bottom-panel.html"),
+        errorPanelTemplate    = require("text!_error-panel.html"),
+        notFoundPanelTemplate = require("text!_not-found-panel.html");
     var $panel;
     var $statusBar;
 
@@ -25,9 +26,12 @@ define(function (require, exports) {
     /**
      * Shows the bottom panel
      */
-    function showPanel() {
+    function showPanel(panelId) {
         _open = true;
         Resizer.show($panel);
+        if (panelId !== undefined) {
+            $("."+panelId).tab("show");
+        }
     }
 
 
@@ -159,12 +163,12 @@ define(function (require, exports) {
 
         // Show the panel (only if we are not told otherwise)
         if (_openOnUpdate) {
-            showPanel();
+            showPanel("mddoc-error");
         }
 
     }
 
-    function _openErrorFile(e) {
+    function _openLocationFromElement(e) {
         // Get the filename and number
         var filename = $(e.currentTarget).find(".filename").text();
         var linenumber = $(e.currentTarget).find(".linenumber").text();
@@ -174,6 +178,40 @@ define(function (require, exports) {
 
         // Open the file
         CommandManager.execute(Commands.FILE_ADD_TO_WORKING_SET, { fullPath: fullPath });
+    }
+
+    /**
+     * Sets the not found references and display the panel if needed
+     */
+    function setNotFound (notFoundRef) {
+//        debugger;
+        // Convert the not found map into a list of ref
+        var refs = [];
+        for (var refhash in notFoundRef) {
+            // Stringify the query
+            notFoundRef[refhash].query = JSON.stringify(notFoundRef[refhash].query, null, "    ");
+            refs.push(notFoundRef[refhash]);
+        }
+        // Render the references using Mustache template system
+        var notFoundPanel = Mustache.render(notFoundPanelTemplate, {refs:refs});
+
+        // Insert the generated html in the error tab
+        $("#mddoc-not-found").html(notFoundPanel);
+
+        if (refs.length > 0 ) {
+            // Mark there are not found references in the status bar
+            StatusBar.updateIndicator("status-mddoc",
+                                      true,
+                                      "mddoc-not-found",
+                                      "There are references that where not found.");
+
+            // Show the panel (only if we are not told otherwise)
+            if ( _openOnUpdate) {
+                showPanel("mddoc-not-found");
+            }
+        }
+
+
     }
 
     AppInit.htmlReady(function () {
@@ -207,8 +245,9 @@ define(function (require, exports) {
         });
 
         // Whenever an error location is clicked, open the file that generates the error.
-        $panel.on("click", "#mddoc-error .locations .loc",  _openErrorFile);
+        $panel.on("click", "#mddoc-error .locations .loc",  _openLocationFromElement);
 
+        $panel.on("click", "#mddoc-not-found .locations .loc",  _openLocationFromElement);
     });
 
     exports.showErrors = showErrors;
@@ -216,5 +255,6 @@ define(function (require, exports) {
     exports.showPanel = showPanel;
     exports.hidePanel = hidePanel;
     exports.togglePanel = togglePanel;
+    exports.setNotFound = setNotFound;
 
 });

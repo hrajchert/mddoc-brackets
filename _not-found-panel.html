@@ -1,0 +1,23 @@
+{{#refs}}
+<div class="not-found-ref">
+    <div class="locations">
+        In:
+        {{#loc}}
+        <span class="loc">
+            <span class="filename">{{file}}</span>:<span class="linenumber">{{line}}</span>
+        </span>
+        {{/loc}}
+    </div>
+
+
+    <div class="src-file">
+        Referencing file: {{src}}
+    </div>
+    <div class="query">
+        using query: {{query}}
+    </div>
+</div>
+<br/>
+{{/refs}}
+
+

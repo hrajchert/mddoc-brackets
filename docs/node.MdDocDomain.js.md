@@ -21,3 +21,29 @@ or some bug of some sort... Will have to check
         "text" : "metadataPromise.promise.inspect().state !== "
     }
 %}
+
+**Warning:**
+This use case is showing the need to make a single entry point for references,
+indexed by refhash
+{:.alert .alert-danger }
+
+{%code_warning
+    "src" : "node/MdDocDomain.js",
+    "ref" : {
+        "text" : "for (var i = 0; i < metadata.hrMd[mdfile].refs.length ; i++) {"
+    }
+%}
+
+
+**Warning:**
+We shouldn't be using the helper method `renderMlBlock` inside the node domain code, instead, in the mddoc library we should
+have a way to get the rendered HTML code and in here just proxy it.
+As a downside, for example, we are accesing the metadata directly, and if that changes (it will), this code will blow.
+{:.alert .alert-danger }
+
+{%code_warning
+    "src" : "node/MdDocDomain.js",
+    "ref" : {
+        "text" : "var renderMlBlock = require"
+    }
+%}

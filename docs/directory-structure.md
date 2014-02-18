@@ -1,5 +1,7 @@
 # Directory structure
 
+TODO: This should probably be using a dox plugin to get the file entry doc as the file descriptor.
+
 * **main.js**: The main file, its in charge of binding the plugin specific stuff.
 * **GutterHelper.js**: It's a helper to abstract the creation of a gutter marker on the left of the editor
 * **node/MdDocDomain.js**: It's the connection file between this plugin and the mdDoc library.

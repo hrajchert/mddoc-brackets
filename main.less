@@ -1,3 +1,7 @@
+// C&P some less defaults, see if reuse somehow
+@bc-black:       #000000;
+@sansFontFamily:        "Helvetica Neue", Helvetica, Arial, sans-serif;
+
 // Gutter
 .mdDoc-gutter {
     color: white;
@@ -9,7 +13,7 @@
     background-color: #446fbd;
 }
 .mdDoc-warning, .mdDoc-todo {
-    background-color: #8a6d3b;
+    background-color: #EECD24;
 }
 
 
@@ -54,4 +58,30 @@
 
 .mddoc-not-found {
     color: #8A6D3B;
+}
+
+
+// Quick view
+
+.inline-widget {
+    .inline-html-show {
+        /*white-space: nowrap;*/
+    }
+
+    .inline-html-show-header {
+        display: inline-block;
+        padding: 10px 10px 0px 40px;
+
+        .title {
+            vertical-align: middle;
+            font-family: @sansFontFamily;
+            font-size: 13px;
+            color: @bc-black;
+            cursor: pointer;
+        }
+    }
+
+    .inline-html-show-holder {
+        padding: 10px 40px;
+    }
 }

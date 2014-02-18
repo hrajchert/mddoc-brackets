@@ -2,19 +2,26 @@
 /*jshint undef: true, unused: true */
 /*global define, $, brackets */
 
-
-define(function (require, exports, module) {
+define(
+    /**
+     * This is the entry point of the plugin. It's in charge of binding the plugin specific stuff.
+     * @exports main
+     */
+    function (require, exports, module) {
     "use strict";
 
     var EditorManager           = brackets.getModule("editor/EditorManager"),
         MultiRangeInlineEditor  = brackets.getModule("editor/MultiRangeInlineEditor").MultiRangeInlineEditor,
         ExtensionUtils          = brackets.getModule("utils/ExtensionUtils"),
         ProjectManager          = brackets.getModule("project/ProjectManager"),
-        DocumentManager         = brackets.getModule("document/DocumentManager");
+        DocumentManager         = brackets.getModule("document/DocumentManager"),
+        CommandManager          = brackets.getModule("command/CommandManager"),
+        Menus                   = brackets.getModule("command/Menus");
 
     var GutterHelper      = require("./GutterHelper");
     var nodeDomainPromise = require("./DomainHelper").mdDocDomain;
     var PanelHelper       = require("./PanelHelper");
+    var InlineDocViewer   = require("./InlineDocViewer").InlineDocViewer;
 
 
     ExtensionUtils.loadStyleSheet(module, "main.less");
@@ -137,8 +144,9 @@ define(function (require, exports, module) {
      * The most specific reference is the one with lower line span
      * @param {type} ref1 The first reference to compare
      * @param {type} ref2 The second reference to compare
+     * @private
      */
-    function sortMoreSpecific(ref1, ref2) {
+    function _sortMoreSpecific(ref1, ref2) {
         var size1 = ref1.char.to - ref1.char.from;
         var size2 = ref2.char.to - ref2.char.from;
 
@@ -151,6 +159,12 @@ define(function (require, exports, module) {
         return 1;
     }
 
+    /**
+     * Open an inline editor to the documentation "source file" of a code reference.
+     *
+     * @param {Editor}    editor    The editor where the inline widget is going to be inserted
+     * @param {array}     refs      The references
+     */
     function openQuickEditReference(editor, refs) {
         var p = $.Deferred();
 
@@ -179,28 +193,100 @@ define(function (require, exports, module) {
         return p.promise();
     }
 
-    function docsQuickEditHandler(editor, location) {
+
+    /**
+     * Open an inline widget that shows the rendered HTML documentation of a code reference
+     *
+     * @param {Editor}    editor    The editor where the inline widget is going to be inserted
+     * @param {array}     refs      The references
+     */
+    function openQuickViewReference(editor, refs) {
+        var p = $.Deferred();
+        nodeDomainPromise.then(function(domain) {
+            // Note that we are taking the first reference, which is the closest one to
+            // where the quick docs was pressed
+            domain.getReferencingMlHtml(refs[0].loc[0].md, refs[0].loc[0].line ).then(
+                function(html) {
+                    var e = new InlineDocViewer(refs[0].loc[0].file, refs[0].loc[0].line, html);
+                    e.load(editor);
+                    p.resolve(e);
+                }
+            );
+        });
+        return p.promise();
+    }
+
+    var _editOnQuickHandle = false;
+
+    /**
+     * @summary Method that handles the Quick Docs (CMD+K) Event.
+     * @desc
+     *          This handler is responsable of detecting if there is a relevant code reference where the
+     *          cursor was pressed, and if so, show an inline viewer to either show or edit the reference
+     *
+     * @param {Editor}                     editor    The current open editor, where the event was triggered
+     * @param {{line:number, ch:number}}   location  The cursor location inside the open editor where the event
+     *                                               was triggered
+     */
+    function quikDocsHandler(editor, location) {
+        // This will hold the references that encloses the cursor
         var refs = [];
-        var openFile = _getEditorRelativePath(editor);
-        for (var refhash in references[openFile]) {
-            if (location.line < references[openFile][refhash].startPos.line ) {
+
+        // Get the references for the file that is currently being
+        // edited
+        var openFileName = _getEditorRelativePath(editor);
+        var openFileReferences = references[openFileName];
+
+        // Go trough the references and add the ones that encloses the cursor
+        for (var refhash in openFileReferences) {
+            if (location.line < openFileReferences[refhash].startPos.line ) {
                 continue;
             }
 
-            if (location.line > references[openFile][refhash].endPos.line ) {
+            if (location.line > openFileReferences[refhash].endPos.line ) {
                 continue;
             }
-            refs.push(references[openFile][refhash].ref);
+            refs.push(openFileReferences[refhash].ref);
         }
+        // If there where no enclosing references, nothing to do here
         if (refs.length === 0) {
             return null;
-        } else {
-            refs.sort(sortMoreSpecific);
-            return openQuickEditReference(editor, refs);
+        }
+        // If not, open an inline widget to either show it or edit them
+        else {
+            // Sort the references by the most specific, so that you get the most relevant one.
+            refs.sort(_sortMoreSpecific);
+            if (_editOnQuickHandle) {
+                return openQuickEditReference(editor, refs);
+            } else {
+                return openQuickViewReference(editor, refs);
+            }
         }
     }
 
-    EditorManager.registerInlineDocsProvider(docsQuickEditHandler, 1);
+    EditorManager.registerInlineDocsProvider(quikDocsHandler, 1);
+
+
+    // Register command to switch between show and edit
+    var CMD_SWITCH_VIEW_EDIT = "mddoc.switchViewEdit";
+
+    function handleSwitchViewEdit() {
+        _editOnQuickHandle = !_editOnQuickHandle;
+        CommandManager.get(CMD_SWITCH_VIEW_EDIT).setChecked(_editOnQuickHandle);
+    }
+
+    // Register the command
+    CommandManager.register("Edit MdDoc on quick docs", CMD_SWITCH_VIEW_EDIT, handleSwitchViewEdit);
+
+    // Set initial checked or not
+    CommandManager.get(CMD_SWITCH_VIEW_EDIT).setChecked(_editOnQuickHandle);
+
+    // Add a menu bar to control it
+    var menu = Menus.getMenu(Menus.AppMenuBar.VIEW_MENU);
+    menu.addMenuDivider();
+    menu.addMenuItem(CMD_SWITCH_VIEW_EDIT,"Ctrl-B");
+
+
 
 
 // Function that shows me how to add a marker in brackets

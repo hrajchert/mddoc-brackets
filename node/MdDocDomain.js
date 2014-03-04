@@ -10,10 +10,10 @@ function () {
     "use strict";
 
     var when  = require("when"),
-        mdDoc = require("mdDoc");
+        mddoc = require("mdDoc");
 
 
-    var utils = mdDoc.utils;
+    var utils = mddoc.utils;
     /**
      * This is a promise to get the metadata
      * @type {Promise}
@@ -120,6 +120,7 @@ function () {
         }
 
         // Change to the project dir to simulate the tool being run there
+        // TODO: Move this to the tool inside a configuration
         process.chdir(projectDir);
 
         // Load the project settings
@@ -127,8 +128,15 @@ function () {
 
         // Run the tool
         mddocSettings.then(function(settings) {
-            mdDoc.tool.verbose(false);
-            mdDoc.tool.run(settings).then(function (metadata) {
+            mddoc.verbose(false);
+            mddoc.initialize(settings);
+
+            var steps = [
+                mddoc.readMarkdown,
+                mddoc.readCode
+            ];
+
+            mddoc.run(steps).then(function (metadata) {
                 metadataPromise.resolve(metadata);
                 cb(null, metadata);
             }, function(err) {

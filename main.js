@@ -44,7 +44,7 @@ define(
      */
     function loadReferences(editor) {
         // If no editor was provided, get the current one.
-        if (typeof editor === "undefined") {
+        if (editor === null || typeof editor === "undefined") {
             editor = EditorManager.getFocusedEditor();
         }
 

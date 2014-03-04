@@ -187,6 +187,7 @@ define(function (require, exports) {
 //        debugger;
         // Convert the not found map into a list of ref
         var refs = [];
+        // TODO: Move this to mddoc
         for (var refhash in notFoundRef) {
             // Stringify the query
             notFoundRef[refhash].query = JSON.stringify(notFoundRef[refhash].query, null, "    ");
@@ -234,8 +235,7 @@ define(function (require, exports) {
         $(statusIconHtml).insertAfter("#status-language");
         $statusBar = $("#status-mddoc");
 
-        StatusBar.addIndicator("status-mddoc", StatusBar);
-
+        StatusBar.addIndicator("status-mddoc");
 
         // If we click on the status bar, then we should toggle the bottom panel
         $statusBar.on("click", function(){

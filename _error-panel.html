@@ -1,12 +1,13 @@
 {{#errors}}
 <div class="step">
-    {{step}}
+    During step: {{step}}
 </div>
 <div class="msg">
-    {{msg}}
+    Message: {{msg}}
 </div>
 <div class="locations">
     {{#location}}
+    in:
     <div class="loc">
         <span class="filename">{{file}}</span>:<span class="linenumber">{{line}}</span>
     </div>

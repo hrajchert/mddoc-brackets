@@ -188,10 +188,10 @@ define(function (require, exports) {
         // Convert the not found map into a list of ref
         var refs = [];
         // TODO: Move this to mddoc
-        for (var refhash in notFoundRef) {
+        for (var i=0; i < notFoundRef.length; i++ ) {
             // Stringify the query
-            notFoundRef[refhash].query = JSON.stringify(notFoundRef[refhash].query, null, "    ");
-            refs.push(notFoundRef[refhash]);
+            notFoundRef[i].query = JSON.stringify(notFoundRef[i].query, null, "    ");
+            refs.push(notFoundRef[i]);
         }
         // Render the references using Mustache template system
         var notFoundPanel = Mustache.render(notFoundPanelTemplate, {refs:refs});

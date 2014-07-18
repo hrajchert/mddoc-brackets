@@ -10,10 +10,9 @@ function () {
     "use strict";
 
     var when  = require("when"),
-        mddoc = require("mdDoc");
+        mddoc = require("mdDoc"),
+        config = mddoc.config;
 
-
-    var utils = mddoc.utils;
     /**
      * This is a promise to get the metadata
      * @type {Promise}
@@ -94,10 +93,16 @@ function () {
      */
     function getNotFoundRefs(cb) {
         // Wait for the metadata to be loaded
-        metadataPromise.promise.then(function(metadata) {
+        metadataPromise.promise.then(function() {
             console.log("getNotFoundRefs called");
+
+            console.log(mddoc.getMetadataManager());
+
+            var ref = mddoc.getMetadataManager().getNotFoundList();
+
+            console.log(ref);
             // Return the not found references
-            return cb(null, metadata.notFound);
+            return cb(null, ref);
         });
 
         // Catch errors
@@ -124,10 +129,10 @@ function () {
         process.chdir(projectDir);
 
         // Load the project settings
-        var mddocSettings = utils.loadJson(projectDir + "/.mddoc.json");
+        var mddocSettings = config.loadConfig(projectDir);
 
         // Run the tool
-        mddocSettings.then(function(settings) {
+        mddocSettings.done(function(settings) {
             mddoc.verbose(false);
             mddoc.initialize(settings);
 

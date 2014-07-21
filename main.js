@@ -52,14 +52,16 @@ define(
         var openFile = _getEditorRelativePath(editor);
 
         // Ask for the node domain
-        nodeDomainPromise.then(function(domain) {
+        nodeDomainPromise.done(function(domain) {
             console.log("Loading references for: " + openFile);
 
             // Clear the previous references
             references[openFile] = {};
             GutterHelper.clearGutter(editor);
 
-            domain.getRefFromCode(openFile).then(function(ref){
+            domain.getRefFromCode(openFile).done(function(ref){
+                console.log("Found " + ref.length + " references in " + openFile);
+
                 for (var refhash in ref) {
                     if (!ref[refhash].found) {
                         continue;
@@ -112,7 +114,10 @@ define(
     function refreshReferences () {
         nodeDomainPromise.then(function(domain) {
             domain.refreshReferences(ProjectManager.getProjectRoot().fullPath).then(
-                function () {
+                function (metadata) {
+                    if (metadata === null) {
+                        return;
+                    }
                     // Reset the loaded references
                     references = {};
                     // Load reference for the current open file
@@ -284,7 +289,7 @@ define(
     // Add a menu bar to control it
     var menu = Menus.getMenu(Menus.AppMenuBar.VIEW_MENU);
     menu.addMenuDivider();
-    menu.addMenuItem(CMD_SWITCH_VIEW_EDIT,"Ctrl-B");
+    menu.addMenuItem(CMD_SWITCH_VIEW_EDIT,"Ctrl-Shift-K");
 
 
 

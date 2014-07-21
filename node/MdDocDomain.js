@@ -26,20 +26,21 @@ function () {
      */
     function getRefFromCode(src, cb) {
         // Wait for the metadata to be loaded
-        metadataPromise.promise.then(function(metadata) {
-            // If we dont have metadata for this src file, nothing to see here, move along.
-            if (!metadata.hrCode.hasOwnProperty(src)) {
-                return cb(null, {});
+        metadataPromise.promise.done(
+            function(metadata) {
+
+                // If we dont have metadata for this src file, nothing to see here, move along.
+                if (metadata === null || !metadata.hrCode.hasOwnProperty(src)) {
+                    return cb(null, {});
+                }
+                // If there is, show it!
+                return cb(null, metadata.hrCode[src].refs);
+            },
+            // Catch errors
+            function(err) {
+                cb(err);
             }
-
-            // If there is, show it!
-            return cb(null, metadata.hrCode[src].refs);
-        });
-
-        // Catch errors
-        metadataPromise.promise.otherwise(function(err) {
-            cb(err);
-        });
+        );
     }
 
     // TODO: Move logic to mddoc
@@ -119,8 +120,10 @@ function () {
      * @param {Errback} cb         The errback to call once we get the references
      */
     function refreshReferences(projectDir, cb) {
+        console.log("refreshing references");
         // If the metadata is already resolved, then create a new one
         if (metadataPromise.promise.inspect().state !== "pending") {
+            console.log("creating a new promise, old was ",metadataPromise.promise.inspect().state);
             metadataPromise = when.defer();
         }
 
@@ -132,22 +135,31 @@ function () {
         var mddocSettings = config.loadConfig(projectDir);
 
         // Run the tool
-        mddocSettings.done(function(settings) {
-            mddoc.verbose(false);
-            mddoc.initialize(settings);
+        mddocSettings.done(
+            function(settings) {
+                mddoc.verbose(false);
+                mddoc.initialize(settings);
 
-            var steps = [
-                mddoc.readMarkdown,
-                mddoc.readCode
-            ];
+                var steps = [
+                    mddoc.readMarkdown,
+                    mddoc.readCode
+                ];
 
-            mddoc.run(steps).then(function (metadata) {
-                metadataPromise.resolve(metadata);
-                cb(null, metadata);
-            }, function(err) {
-                cb(err);
-            });
-        });
+                mddoc.run(steps).then(function (metadata) {
+                    metadataPromise.resolve(metadata);
+                    cb(null, metadata);
+                }, function(err) {
+                    cb(err);
+                });
+            },
+            // If we could not load the settings, there is no problem
+            function(err) {
+                console.log("could not load the settings?", err);
+                metadataPromise.resolve(null);
+                // TODO: distinguish between configuration error and configuration file not found
+                cb(null, null);
+            }
+        );
     }
 
     /**

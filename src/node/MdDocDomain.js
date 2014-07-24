@@ -9,8 +9,11 @@ maxerr: 50, node: true */
 function () {
     "use strict";
 
-    var when  = require("when"),
-        mddoc = require("mdDoc"),
+    var when   = require("when"),
+        mddoc  = require("mdDoc"),
+        fs     = require("fs"),
+        path   = require("path"),
+        utils  = mddoc.utils,
         config = mddoc.config;
 
     /**
@@ -18,6 +21,8 @@ function () {
      * @type {Promise}
      */
     var metadataPromise = when.defer();
+
+    var mddocSettings = null;
 
     /**
      * Gets the reference from a source file
@@ -58,7 +63,7 @@ function () {
      * @return {String}             The rendered HTML
      */
     function getReferencingMlHtml (mdfile, line, cb) {
-        metadataPromise.promise.then(function(metadata) {
+        metadataPromise.promise.done(function(metadata) {
             // If we dont have metadata for this src file, something went wrong
             if (!metadata.hrMd.hasOwnProperty(mdfile)) {
                 return cb("Md file not found: " + mdfile);
@@ -82,9 +87,9 @@ function () {
             if (referencingJsonMl === null) {
                 return cb(null, "NO BLOCK ATTACHED");
             }
-            var jsonML = ["markdown", referencingJsonMl];
+            referencingJsonMl.unshift("markdown");
 
-            return cb(null, renderMlBlock(jsonML));
+            return cb(null, renderMlBlock(referencingJsonMl));
         });
     }
 
@@ -112,7 +117,50 @@ function () {
         });
 
     }
+    function _getAbsolutePath(dir) {
+        dir = path.normalize(dir);
+        if (dir[0] !== "/") {
+            dir = path.join(process.cwd(), dir);
+        }
+        return dir;
+    }
 
+    function makeSureDocFileExists(relativePath, cb) {
+        console.log("makeSureDocFileExists");
+        if (mddocSettings === null) {
+            console.log("arggg");
+
+            cb("Configuration not loaded yet, ups");
+        }
+        mddocSettings.then(
+            function(settings) {
+                console.log("settings loaded!");
+                console.log(settings);
+                var docpath = path.normalize(settings.inputDir + "/" + relativePath + ".md");
+                console.log("settings loaded 2!!!");
+
+                console.log(docpath);
+                fs.stat(docpath, function(err) {
+                    if (err) {
+                        if (err.code === "ENOENT") {
+                            // create
+                            console.log("I need to create it");
+                            utils.writeFileCreateDir(docpath," ").done(function() {
+                                cb(null,_getAbsolutePath(docpath));
+                            });
+                        } else {
+                            cb(err);
+                        }
+                    } else {
+                        cb(null,_getAbsolutePath(docpath));
+                    }
+                });
+
+            },
+            function () {
+                cb("We couldn't find an mddoc configuration");
+            });
+    }
 
     /**
      * Refreshes the metadata for the project
@@ -132,7 +180,7 @@ function () {
         process.chdir(projectDir);
 
         // Load the project settings
-        var mddocSettings = config.loadConfig(projectDir);
+        mddocSettings = config.loadConfig(projectDir);
 
         // Run the tool
         mddocSettings.done(
@@ -207,6 +255,19 @@ function () {
             [],                 // no parameters
             []
         );
+        DomainManager.registerCommand(
+            "mdDoc",            // domain name
+            "makeSureDocFileExists",   // command name
+            makeSureDocFileExists,     // command handler function
+            true,              // this command is asynchronous
+            "To complete",
+            [{name: "path",
+              type: "src:string",
+              description: "The relative path of the file we want the doc for"
+             }],                 // no parameters
+            []
+        );
+
 
         DomainManager.registerCommand(
             "mdDoc",            // domain name

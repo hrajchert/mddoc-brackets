@@ -2,7 +2,7 @@ The method `refreshReferences` is currently analyzing (and rendering the html) f
 TODO: Make it more performant and separated in the future
 
 {%code_warning
-    "src" : "node/MdDocDomain.js",
+    "src" : "src/node/MdDocDomain.js",
     "ref" : {
         "text" : "function refreshReferences(projectDir, cb) {"
     }
@@ -16,7 +16,7 @@ I think that by switching the promise, we could be loosing the pending promises 
 or some bug of some sort... Will have to check
 
 {%code_warning
-    "src" : "node/MdDocDomain.js",
+    "src" : "src/node/MdDocDomain.js",
     "ref" : {
         "text" : "metadataPromise.promise.inspect().state !== "
     }
@@ -28,7 +28,7 @@ indexed by refhash
 {:.alert .alert-danger }
 
 {%code_warning
-    "src" : "node/MdDocDomain.js",
+    "src" : "src/node/MdDocDomain.js",
     "ref" : {
         "text" : "for (var i = 0; i < metadata.hrMd[mdfile].refs.length ; i++) {"
     }
@@ -42,7 +42,7 @@ As a downside, for example, we are accesing the metadata directly, and if that c
 {:.alert .alert-danger }
 
 {%code_warning
-    "src" : "node/MdDocDomain.js",
+    "src" : "src/node/MdDocDomain.js",
     "ref" : {
         "text" : "var renderMlBlock = require"
     }

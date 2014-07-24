@@ -10,9 +10,9 @@ define(function (require, exports) {
         ProjectManager          = brackets.getModule("project/ProjectManager"),
         Resizer                 = brackets.getModule("utils/Resizer");
 
-    var panelTemplate         = require("text!bottom-panel.html"),
-        errorPanelTemplate    = require("text!_error-panel.html"),
-        notFoundPanelTemplate = require("text!_not-found-panel.html");
+    var panelTemplate         = require("text!panels/bottom-panel.html"),
+        errorPanelTemplate    = require("text!panels/_error-panel.html"),
+        notFoundPanelTemplate = require("text!panels/_not-found-panel.html");
     var $panel;
     var $statusBar;
 

@@ -8,6 +8,7 @@ It also stores the references in the `references object` to allow the `cmd + K `
 
 {%code_inc
     "src" : "main.js",
+    "referingBlocks" : 3,
     "ref" : {
         "text" : "function loadReferences(editor) {"
     }

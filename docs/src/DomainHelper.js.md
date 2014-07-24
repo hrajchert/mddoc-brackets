@@ -6,7 +6,7 @@ But for some reason, the resolve on a "jQuery then method" is giving me the prom
 instead of the domain itself. Thats why I had to add what I think it is, an unecesary annon function
 
 {%code_inc
-    "src" : "DomainHelper.js",
+    "src" : "src/DomainHelper.js",
     "ref" : {
         "text" : "connect().then(loadDomain).then(function(a){"
     }

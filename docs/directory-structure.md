@@ -17,14 +17,14 @@ TODO: This should probably be using a dox plugin to get the file entry doc as th
 %}
 
 {%code_ref
-    "src": "GutterHelper.js",
+    "src": "src/GutterHelper.js",
     "ref" : {
         "line" : "1-1"
     }
 %}
 
 {%code_ref
-    "src": "node/MdDocDomain.js",
+    "src": "src/node/MdDocDomain.js",
     "ref" : {
         "line" : "1-1"
     }

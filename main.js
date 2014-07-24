@@ -18,11 +18,11 @@ define(
         CommandManager          = brackets.getModule("command/CommandManager"),
         Menus                   = brackets.getModule("command/Menus");
 
-    var GutterHelper      = require("./GutterHelper");
-    var nodeDomainPromise = require("./DomainHelper").mdDocDomain;
-    var PanelHelper       = require("./PanelHelper");
-    var InlineDocViewer   = require("./InlineDocViewer").InlineDocViewer;
-
+    var GutterHelper      = require("./src/GutterHelper");
+    var nodeDomainPromise = require("./src/DomainHelper").mdDocDomain;
+    var PanelHelper       = require("./src/PanelHelper");
+    var InlineDocViewer   = require("./src/InlineDocViewer").InlineDocViewer;
+    var handleCreateRef   = require("./src/ReferenceCreator").handleCreateRef;
 
     ExtensionUtils.loadStyleSheet(module, "main.less");
 
@@ -60,7 +60,7 @@ define(
             GutterHelper.clearGutter(editor);
 
             domain.getRefFromCode(openFile).done(function(ref){
-                console.log("Found " + ref.length + " references in " + openFile);
+                console.log("Found " + Object.keys(ref).length + " references in " + openFile);
 
                 for (var refhash in ref) {
                     if (!ref[refhash].found) {
@@ -180,7 +180,7 @@ define(
             documentPromises.push(DocumentManager.getDocumentForPath(filePath));
         }
 
-        $.when.apply($, documentPromises).then( function() {
+        $.when.apply($, documentPromises).done( function() {
             var ranges = [];
             for (var i = 0; i < arguments.length ; i++ ) {
                 ranges.push({
@@ -193,8 +193,8 @@ define(
             var e = new MultiRangeInlineEditor(ranges);
             e.load(editor);
             p.resolve(e);
-
         });
+
         return p.promise();
     }
 
@@ -290,6 +290,14 @@ define(
     var menu = Menus.getMenu(Menus.AppMenuBar.VIEW_MENU);
     menu.addMenuDivider();
     menu.addMenuItem(CMD_SWITCH_VIEW_EDIT,"Ctrl-Shift-K");
+
+
+    // Register command to create a new reference from selecting text
+    var CMD_CREATE_REF = "mddoc.createRef";
+
+    // Register the command
+    CommandManager.register("Create reference", CMD_CREATE_REF, handleCreateRef);
+    menu.addMenuItem(CMD_CREATE_REF,"Ctrl-Alt-K");
 
 
 

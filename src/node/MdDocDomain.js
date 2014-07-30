@@ -83,7 +83,7 @@ function () {
                 return cb("Reference not found");
             }
             // Get the markdown block, asociated with the reference
-            var referencingJsonMl = ref.refMl;
+            var referencingJsonMl = ref.refMl.slice(0);
             if (referencingJsonMl === null) {
                 return cb(null, "NO BLOCK ATTACHED");
             }

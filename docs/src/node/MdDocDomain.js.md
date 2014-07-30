@@ -29,6 +29,7 @@ indexed by refhash
 
 {%code_warning
     "src" : "src/node/MdDocDomain.js",
+    "priority": 4,
     "ref" : {
         "text" : "for (var i = 0; i < metadata.hrMd[mdfile].refs.length ; i++) {"
     }
